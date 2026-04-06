@@ -7,10 +7,10 @@ export function useShipments() {
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "shipments"), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      // const data = snapshot.docs.map(doc => ({
+      //   id: doc.id,
+      //   ...doc.data()
+      // }));
     //   setShipments(data);
     setShipments([
   {

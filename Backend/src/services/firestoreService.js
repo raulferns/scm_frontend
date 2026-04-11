@@ -1,27 +1,24 @@
 const db = require("../config/firebase");
 
-async function createShipment(origin, destination, priority) {
-    try{
-        const shipmentData = await db.collection("shipments").add({
-            origin,
-            destination,
-            priority,
-            createdAt: new Date(),
+async function createShipment(shipmentData) {
+    try {
+        const docRef = await db.collection("shipments").add(shipmentData);
+
+        await db.collection("shipments").doc(docRef.id).update({
+            shipmentId: docRef.id
         });
 
-        const response = {
-            message: "Shipment created successfully",
-            shipmentId: shipmentData.id,
-            status: "pending"
-        }
+        return {
+            shipmentId: docRef.id,
+            ...shipmentData
+        };
 
-        return response;
-
-    }catch(err){
+    } catch (err) {
         console.error("Error creating shipment:", err);
-    
+        throw err;
     }
 }
+
 
 async function getAllShipments(){
     try{

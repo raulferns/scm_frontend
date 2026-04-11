@@ -1,4 +1,6 @@
 const { createShipment, getAllShipments, getShipmentById, updateShipment } = require("../services/firestoreService");
+const {getRoute} = require("../services/mapsService");
+const { getWeather } = require("../services/weatherService");
 
 exports.createShipment = async(req, res) => {
     try{
@@ -8,9 +10,38 @@ exports.createShipment = async(req, res) => {
             throw new Error("Origin, destination and priority are required");
         }
 
-        const response = await createShipment(origin, destination, priority);
+        const routeData = await getRoute(origin, destination);
+        const weatherData = await getWeather(origin.lat, origin.lng);
 
-        res.status(201).json(response);
+        const shipmentData = {
+            origin,
+            destination,
+            priority,
+
+            status: "pending",
+
+            distanceKm: routeData?.distanceKm || null,
+            trafficDurationMin: routeData?.durationMin || null,
+            routePolyline: routeData?.routePolyline || "",
+            alternateRoutes: routeData?.alternateRoutes || [],
+
+            weatherCondition: weatherData?.weatherCondition || "Unknown",
+            weatherSeverity: weatherData?.weatherSeverity || 2,
+
+            trafficLevel: "Moderate",
+
+            delayProbability: null,
+            riskLevel: null,
+            eta: null,
+
+            cascadeAffected: [],
+            aiExplanation: "",
+
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+    };
+    const savedShipment = await createShipment(shipmentData);
+        res.status(201).json(shipmentData);
         
     }catch(err){
         res.error("Error creating shipment:", err);

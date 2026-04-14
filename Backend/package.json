@@ -18,7 +18,8 @@
     "express": "^5.2.1",
     "firebase-admin": "^13.8.0",
     "nodemon": "^3.1.14",
-    "numpy": "^0.0.1"
+    "numpy": "^0.0.1",
+    "pandas": "^0.0.3"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

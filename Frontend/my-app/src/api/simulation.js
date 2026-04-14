@@ -1,15 +1,17 @@
+import { BASE_URL } from "./base";
+
 export async function predictShipmentRisk(payload) {
   let res;
 
   try {
-    res = await fetch("/api/v1/predict", {
+    res = await fetch(`${BASE_URL}/api/v1/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
   } catch (error) {
     throw new Error(
-      "Could not reach the backend prediction API. Make sure Frontend Vite is running and Backend `npm run dev` is fully started."
+      "Could not reach backend prediction API. Ensure backend is running."
     );
   }
 

@@ -55,14 +55,31 @@ exports.predictRisk = async(req, res) => {
         });
         
     }catch(err){
-        console.error("Error predicting shipment risk:", err);
-        res.status(500).json({ error: err.message });
+        console.error("ML failed:", err.message);
+
+        prediction = {
+            delayProbability: 0,
+            riskLevel: "Low",
+            explanation: "ML service unavailable",
+            features: mlFeatures,
+            modelVersion: "fallback"
+        };
     }
 }
 
 exports.createShipment = async(req, res) => {
     try{
-        const { origin, destination, priority } = req.body;
+        const {
+            origin,
+            destination,
+            priority,
+            weight,
+            packageType,
+            instructions,
+            constraints,
+            pickupDate,
+            timeWindow
+            } = req.body;
 
         if(!origin || !destination || !priority){
             throw new Error("Origin, destination and priority are required");
@@ -108,8 +125,15 @@ exports.createShipment = async(req, res) => {
             mlFeatures: prediction.features,
             modelVersion: prediction.modelVersion,
 
+            weight: weight || null,
+            packageType: packageType || "",
+            instructions: instructions || "",
+            constraints: constraints || [],
+            pickupDate: pickupDate || null,
+            timeWindow: timeWindow || "",
+
             createdAt,
-            updatedAt: createdAt
+            updatedAt: new Date().toISOString()
     };
     const savedShipment = await createShipment(shipmentData);
         res.status(201).json(savedShipment);

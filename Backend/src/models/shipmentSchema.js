@@ -1,9 +1,7 @@
-
 const shipmentSchema = {
-  shipmentId: "string", 
+  shipmentId: "string",
 
   status: "pending | in_transit | delivered | cancelled",
-
   priority: "high | medium | low",
 
   origin: {
@@ -18,17 +16,17 @@ const shipmentSchema = {
     address: "string (optional)"
   },
 
+ 
+  weight: "number (kg, optional)",
+  packageType: "string (box | pallet | envelope | fragile | hazardous)",
+  instructions: "string (optional)",
+  constraints: ["string"],
+  pickupDate: "string (YYYY-MM-DD)",
+  timeWindow: "string (morning | afternoon | evening | flexible)",
+
   distanceKm: "number (from Maps API)",
   trafficDurationMin: "number",
   trafficLevel: "Low | Moderate | Heavy",
-
-  eta: "timestamp",
-
-  weatherCondition: "string",
-  weatherSeverity: "number (0-10)",
-
-  delayProbability: "number (0-100)",
-  riskLevel: "Low | Medium | High",
 
   routePolyline: "string",
 
@@ -40,9 +38,18 @@ const shipmentSchema = {
     }
   ],
 
+  eta: "timestamp",
+
+
+  weatherCondition: "string",
+  weatherSeverity: "number (0-10)",
+
+  delayProbability: "number (0-100)",
+  riskLevel: "Low | Medium | High",
+  aiExplanation: "string",
+
   cascadeAffected: ["shipmentId"],
 
-  aiExplanation: "string",
 
   createdAt: "timestamp",
   updatedAt: "timestamp"

@@ -1,6 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-body {
-  margin: 0;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f8fafc;
+    color: #0f172a;
+  }
+}
+
+@layer components {
+  /* ── Card Primitives ─────────────────────────── */
+  .card {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-sm;
+  }
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  /* ── Stat metric card ───────────────────────── */
+  .metric-icon {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0;
+  }
+
+  /* ── Badge primitives ───────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-green  { @apply bg-emerald-100 text-emerald-700; }
+  .badge-amber  { @apply bg-amber-100   text-amber-700;   }
+  .badge-red    { @apply bg-red-100     text-red-700;     }
+  .badge-blue   { @apply bg-blue-100    text-blue-700;    }
+  .badge-gray   { @apply bg-slate-100   text-slate-600;   }
+
+  /* ── Input primitives ───────────────────────── */
+  .form-input {
+    @apply w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm
+           bg-white placeholder-slate-400
+           focus:ring-2 focus:ring-emerald-500 focus:border-transparent
+           outline-none transition-all duration-150;
+  }
+  .form-label {
+    @apply block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2;
+  }
+
+  /* ── Button primitives ──────────────────────── */
+  .btn-primary {
+    @apply bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800
+           text-white text-sm font-semibold px-5 py-2.5 rounded-xl
+           transition-all duration-150 shadow-sm hover:shadow-md
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply border border-slate-200 hover:border-slate-300 hover:bg-slate-50
+           text-slate-600 text-sm font-medium px-5 py-2.5 rounded-xl
+           transition-all duration-150;
+  }
+
+  /* ── Slider custom style ────────────────────── */
+  .slider-track {
+    @apply w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer;
+  }
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: #10b981;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+  }
+  input[type='range']::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 4px rgba(16,185,129,0.15);
+  }
+  input[type='range']::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: #10b981;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+
+  /* ── Stepper ────────────────────────────────── */
+  .step-connector {
+    @apply flex-1 h-px bg-slate-200 mx-3 mt-4;
+  }
+
+  /* ── Section title ──────────────────────────── */
+  .section-title {
+    @apply text-lg font-semibold text-slate-800;
+  }
+  .section-sub {
+    @apply text-sm text-slate-400 mt-0.5;
+  }
+
+  /* ── Table ──────────────────────────────────── */
+  .data-table {
+    @apply w-full text-sm;
+  }
+  .data-table thead tr {
+    @apply bg-slate-50 border-b border-slate-100;
+  }
+  .data-table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider;
+  }
+  .data-table tbody tr {
+    @apply border-b border-slate-50 transition-colors duration-100 cursor-pointer;
+  }
+  .data-table tbody tr:nth-child(even) {
+    @apply bg-slate-50/50;
+  }
+  .data-table tbody tr:hover {
+    @apply bg-emerald-50/70;
+  }
+  .data-table td {
+    @apply px-4 py-3.5 text-slate-700;
+  }
+
+  /* ── Score / progress bar ───────────────────── */
+  .progress-bar-track {
+    @apply h-2 bg-slate-200 rounded-full overflow-hidden;
+  }
+  .progress-bar-fill {
+    @apply h-2 rounded-full transition-all duration-500;
+  }
+
+  /* ── Insight card ───────────────────────────── */
+  .insight-item {
+    @apply flex items-start gap-3 p-3 rounded-xl border transition-all duration-150;
+  }
+}
+
+/* Leaflet z-index fix */
+.leaflet-pane { z-index: 10 !important; }
+.leaflet-top, .leaflet-bottom { z-index: 20 !important; }
+
+/* Smooth page transitions */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.page-enter {
+  animation: fadeSlideIn 0.25s ease-out both;
+}
+
+/* Pulse dot animation */
+@keyframes pulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.6; }
+}
+.pulse-dot {
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.6s infinite;
 }

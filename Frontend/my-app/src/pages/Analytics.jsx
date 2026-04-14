@@ -10,84 +10,197 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
+const RISK_COLORS   = ["#ef4444", "#f59e0b", "#10b981"];
+const STATUS_COLORS = ["#94a3b8", "#3b82f6", "#10b981", "#ef4444"];
+
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload?.length) {
+    return (
+      <div className="bg-white border border-slate-100 shadow-lg rounded-xl px-3 py-2 text-sm">
+        <p className="font-semibold text-slate-700">{payload[0].name}</p>
+        <p className="text-slate-500">{payload[0].value} shipments</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+function ChartCard({ title, subtitle, children }) {
+  return (
+    <div className="card p-6">
+      <div className="mb-5">
+        <h2 className="section-title text-base">{title}</h2>
+        {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export default function Analytics() {
-  // 1. Always call the hook at the very top. 
-  // If useShipments uses a websocket or Firebase, this 'data' variable 
-  // will update automatically when the server sends changes.
-  const data = useShipments();
+  // Always call the hook at the very top.
+  const { shipments, loading, error } = useShipments();
+ 
 
-  // 2. Define your fallback (dummy) data
-  const dummyData = [
-    { id: 1, riskLevel: "High", status: "delayed" },
-    { id: 2, riskLevel: "Medium", status: "in_transit" },
-    { id: 3, riskLevel: "Low", status: "delivered" },
-    { id: 4, riskLevel: "High", status: "in_transit" },
-  ];
+  // Define your fallback (dummy) data
+  // const dummyData = [
+  //   { id: 1, riskLevel: "High",   status: "delayed"    },
+  //   { id: 2, riskLevel: "Medium", status: "in_transit" },
+  //   { id: 3, riskLevel: "Low",    status: "delivered"  },
+  //   { id: 4, riskLevel: "High",   status: "in_transit" },
+  // ];
 
-  // 3. Determine which source to use. 
-  // If 'data' exists and has items, use it. Otherwise, use dummyData.
-  const shipments = (data && data.length > 0) ? data : dummyData;
+  // Determine which source to use.
+  const isLive = shipments.length > 0;
 
-  // 🔥 Risk Data (Calculated dynamically based on the 'shipments' variable)
+  // Risk Data
   const riskData = [
-    { name: "High", value: shipments.filter(s => s.riskLevel === "High").length },
+    { name: "High",   value: shipments.filter(s => s.riskLevel === "High").length   },
     { name: "Medium", value: shipments.filter(s => s.riskLevel === "Medium").length },
-    { name: "Low", value: shipments.filter(s => s.riskLevel === "Low").length },
+    { name: "Low",    value: shipments.filter(s => s.riskLevel === "Low").length    },
   ];
 
-  // 🔥 Status Data (Calculated dynamically)
+  // Status Data
   const statusData = [
-    { name: "In Transit", value: shipments.filter(s => s.status === "in_transit").length },
-    { name: "Delayed", value: shipments.filter(s => s.status === "delayed").length },
-    { name: "Delivered", value: shipments.filter(s => s.status === "delivered").length },
-  ];
-
-  const COLORS = ["#ef4444", "#facc15", "#22c55e"];
+  { name: "Pending",    value: shipments.filter(s => s.status === "pending").length },
+  { name: "In Transit", value: shipments.filter(s => s.status === "in_transit").length },
+  { name: "Delivered",  value: shipments.filter(s => s.status === "delivered").length },
+  { name: "Cancelled",  value: shipments.filter(s => s.status === "cancelled").length },
+];
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-slate-50 min-h-screen">
       <Navbar />
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">📊 Analytics Dashboard</h1>
-          {data && data.length > 0 && (
-            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-              ● Live Data
-            </span>
-          )}
+
+      <div className="max-w-7xl mx-auto px-6 py-6 page-enter">
+
+        {/* Page header */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Analytics</h1>
+            <p className="section-sub">Shipment risk and status breakdown</p>
+          </div>
+          <span className={`badge ${isLive ? "badge-green" : "badge-gray"} px-3 py-1.5`}>
+            {isLive ? (
+              <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" /> Live Data</>
+            ) : (
+              "Sample Data"
+            )}
+          </span>
         </div>
 
+        {/* Summary strip */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[
+            { label: "Total Analysed", value: shipments.length,                                           color: "text-slate-800"   },
+            { label: "High Risk",      value: riskData[0].value,                                          color: "text-red-600"     },
+            { label: "Delivered",      value: statusData[2].value,                                        color: "text-emerald-600" },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="card p-4 flex items-center gap-4">
+              <p className={`text-3xl font-bold ${color}`}>{value}</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* RISK PIE CHART */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="mb-4 font-semibold text-gray-700">Risk Distribution</h2>
-            <ResponsiveContainer width="100%" height={300}>
+
+          {/* Risk Pie */}
+          <ChartCard
+            title="Risk Distribution"
+            subtitle="Breakdown of shipments by risk classification"
+          >
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie data={riskData} dataKey="value" outerRadius={100} label>
-                  {riskData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Pie
+                  data={riskData}
+                  dataKey="value"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  innerRadius={50}
+                  paddingAngle={3}
+                  label={({ name, value }) => `${name}: ${value}`}
+                  labelLine={false}
+                >
+                  {riskData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={RISK_COLORS[index % RISK_COLORS.length]}
+                    />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  formatter={(value) => (
+                    <span className="text-xs text-slate-600 font-medium">{value}</span>
+                  )}
+                />
               </PieChart>
             </ResponsiveContainer>
-          </div>
+          </ChartCard>
 
-          {/* STATUS BAR CHART */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="mb-4 font-semibold text-gray-700">Shipment Status</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statusData}>
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          {/* Status Bar */}
+          <ChartCard
+            title="Shipment Status"
+            subtitle="Count of shipments per delivery status"
+          >
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={statusData} barCategoryGap="35%">
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12, fill: "#64748b" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {statusData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={STATUS_COLORS[index % STATUS_COLORS.length]}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </ChartCard>
+
+        </div>
+
+        {/* Risk legend detail */}
+        <div className="mt-6 card p-5">
+          <h3 className="text-sm font-semibold text-slate-600 mb-4">Risk Level Guide</h3>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { level: "Low",    color: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50", desc: "Minimal chance of delay. No action needed."        },
+              { level: "Medium", color: "bg-amber-500",   text: "text-amber-700",   bg: "bg-amber-50",   desc: "Some risk factors present. Monitor closely."       },
+              { level: "High",   color: "bg-red-500",     text: "text-red-700",     bg: "bg-red-50",     desc: "Significant delay probability. Intervene quickly."  },
+            ].map(({ level, color, text, bg, desc }) => (
+              <div key={level} className={`${bg} rounded-xl p-4 border ${bg.replace("50","100")}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`w-3 h-3 rounded-full ${color}`} />
+                  <span className={`text-sm font-semibold ${text}`}>{level} Risk</span>
+                  <span className="ml-auto text-xl font-bold text-slate-700">
+                    {riskData.find(r => r.name === level)?.value ?? 0}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -100,6 +100,18 @@ const validate_prediction = (req, res, next) => {
             });
         }
 
+        if (req.body.weight && typeof req.body.weight !== "number") {
+            throw new Error("Weight must be a number");
+        }
+
+        if (req.body.packageType && typeof req.body.packageType !== "string") {
+            throw new Error("Invalid package type");
+        }
+
+        if (req.body.constraints && !Array.isArray(req.body.constraints)) {
+            throw new Error("Constraints must be an array");
+        }
+
         next();
 
     } catch (err) {

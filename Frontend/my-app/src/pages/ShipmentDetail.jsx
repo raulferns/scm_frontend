@@ -1,12 +1,15 @@
+import { useState, useEffect } from "react"; // ✅ ADDITION: Needed for state and animation
 import { useParams, useNavigate } from "react-router-dom";
 import { useShipments } from "../hooks/useShipments";
 import Navbar from "../components/Navbar";
 import RiskBadge from "../components/RiskBadge";
 import ShipmentMap from "../components/ShipmentMap";
+import ChatAssistant from "../components/ChatAssistant"; // ✅ ADDITION: Conversational UI Component
+import polyline from "@mapbox/polyline";
 
 const STATUS_STYLE = {
-  in_transit: { label: "In Transit", classes: "bg-blue-50 text-blue-700 border-blue-200"     },
-  delayed:    { label: "Delayed",    classes: "bg-red-50  text-red-700  border-red-200"       },
+  in_transit: { label: "In Transit", classes: "bg-blue-50 text-blue-700 border-blue-200" },
+  delayed:    { label: "Delayed",    classes: "bg-red-50  text-red-700  border-red-200" },
   delivered:  { label: "Delivered",  classes: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 };
 
@@ -20,12 +23,34 @@ function InfoRow({ label, value }) {
 }
 
 export default function ShipmentDetail() {
-  const { id }      = useParams();
-  const navigate    = useNavigate();
+  const { id } = useParams();
+  const navigate = useNavigate();
   const { shipments, loading, error } = useShipments();
+  
+  // ✅ ADDITION: State to track live movement position
+  const [currentPos, setCurrentPos] = useState(null); 
+  
   const safeShipments = Array.isArray(shipments) ? shipments : [];
-
   const shipment = safeShipments.find(s => s.shipmentId === id);
+
+  // ✅ ADDITION: Animation logic for Live Journey Tracking (100ms interval)
+  useEffect(() => {
+    if (shipment?.routePolyline) {
+      const decodedCoords = polyline.decode(shipment.routePolyline);
+      let index = 0;
+
+      const interval = setInterval(() => {
+        if (index < decodedCoords.length) {
+          setCurrentPos(decodedCoords[index]);
+          index++;
+        } else {
+          index = 0; // Step 5: Loop animation
+        }
+      }, 100); // 100ms recommended interval
+
+      return () => clearInterval(interval);
+    }
+  }, [shipment]);
 
   const affectedShipments = shipment
     ? safeShipments.filter(
@@ -74,7 +99,6 @@ export default function ShipmentDetail() {
             <p className="text-sm text-slate-400 mt-0.5">Full route and risk breakdown</p>
           </div>
 
-          {/* Status + Risk badges */}
           <div className="flex items-center gap-2">
             <span className={`badge border text-xs ${statusCfg.classes}`}>
               {statusCfg.label}
@@ -83,11 +107,11 @@ export default function ShipmentDetail() {
           </div>
         </div>
 
-        {/* ── Map ────────────────────────────────── */}
+        {/* ── Map (Live Journey Tracker Integration) ────────────────── */}
         <div className="card overflow-hidden mb-6">
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-slate-800">Route Map</h2>
+              <h2 className="text-base font-semibold text-slate-800">Live Journey Tracker</h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 {shipment.origin?.address} → {shipment.destination?.address}
               </p>
@@ -98,7 +122,11 @@ export default function ShipmentDetail() {
             </div>
           </div>
           <div className="p-2">
-            <ShipmentMap shipments={[shipment]} />
+            {/* ✅ ADDITION: livePosition passed to ShipmentMap */}
+            <ShipmentMap 
+              shipments={[shipment]} 
+              livePosition={currentPos} 
+            />
           </div>
         </div>
 
@@ -173,7 +201,7 @@ export default function ShipmentDetail() {
                 <div
                   key={s.id}
                   className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-amber-100 cursor-pointer hover:border-amber-300 transition-all duration-150 shadow-sm"
-                  onClick={() => (window.location.href = `/shipment/${s.shipmentId}`)}
+                  onClick={() => navigate(`/shipment/${s.shipmentId}`)}
                 >
                   <span className="text-sm">🚚</span>
                   <span className="text-sm font-medium text-slate-700 font-mono">{s.shipmentId}</span>
@@ -187,6 +215,10 @@ export default function ShipmentDetail() {
         )}
 
       </div>
+      
+      {/* ✅ ADDITION: Conversational Assistant Floating UI */}
+      <ChatAssistant />
+      
     </div>
   );
 }

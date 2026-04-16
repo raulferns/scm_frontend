@@ -2,9 +2,18 @@ import { Fragment, useEffect, useMemo } from "react";
 import { divIcon } from "leaflet";
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import polyline from "@mapbox/polyline";
 
 const center = [20.5937, 78.9629];
 const containerStyle = { width: "100%", height: "400px" };
+
+// ── ADDITION: Define the moving truck icon ──────────────────
+const movingTruckIcon = divIcon({
+  className: "",
+  html: `<div style="font-size: 24px; filter: drop-shadow(0 0 2px white); cursor: pointer;">🚚</div>`,
+  iconAnchor: [12, 12],
+});
+
 const riskColors = {
   High: "#ef4444",
   Medium: "#eab308",
@@ -63,26 +72,37 @@ function MapBounds({ routes }) {
   return null;
 }
 
-export default function ShipmentMap({ shipments }) {
+export default function ShipmentMap({ shipments, livePosition }) {
   const routes = useMemo(
     () =>
       (shipments ?? []).map((shipment, index) => {
-        const origin = toLatLng(shipment.origin);
-        const destination = toLatLng(shipment.destination);
-        const midLat = (origin[0] + destination[0]) / 2;
-        const midLng = (origin[1] + destination[1]) / 2;
+        // ── ADDITION: Fixed logic for polyline decoding ──────
+        let mainRoute = [];
+        const originPoint = toLatLng(shipment.origin);
+        const destinationPoint = toLatLng(shipment.destination);
+
+        if (shipment.routePolyline) {
+          mainRoute = polyline.decode(shipment.routePolyline);
+        } else {
+          mainRoute = [originPoint, destinationPoint];
+        }
+
+        const origin = mainRoute[0];
+        const midLat = (originPoint[0] + destinationPoint[0]) / 2;
+        const midLng = (originPoint[1] + destinationPoint[1]) / 2;
+        
         const altRoutes =
           shipment.riskLevel === "High"
             ? [
-                [origin, [midLat + 2, midLng - 2], destination],
-                [origin, [midLat - 2, midLng + 2], destination],
+                [originPoint, [midLat + 2, midLng - 2], destinationPoint],
+                [originPoint, [midLat - 2, midLng + 2], destinationPoint],
               ]
             : [];
 
         return {
           key: shipment.id ?? shipment.shipmentId ?? index,
           origin,
-          mainRoute: [origin, destination],
+          mainRoute, // ── CORRECTED: Now using the array from polyline
           altRoutes,
           riskLevel: shipment.riskLevel,
           color: getRiskColor(shipment.riskLevel),
@@ -106,6 +126,12 @@ export default function ShipmentMap({ shipments }) {
             pathOptions={{ color: route.color, opacity: 0.9, weight: 4 }}
             positions={route.mainRoute}
           />
+          
+          {/* ── ADDITION: Render the moving marker ───────────── */}
+          {livePosition && (
+            <Marker position={livePosition} icon={movingTruckIcon} />
+          )}
+
           {route.altRoutes.map((altRoute, index) => (
             <Polyline
               key={`${route.key}-alt-${index}`}

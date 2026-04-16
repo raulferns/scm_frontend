@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import ShipmentDetail from "./pages/ShipmentDetail";
 import Analytics from "./pages/Analytics";
+import ChatAssistant from "./components/ChatAssistant";
 // --- ADD THESE IMPORTS ---
 // ✅ CORRECT (App.jsx is in src/)
 import CreateShipment from "./pages/CreateShipment";
@@ -25,6 +26,7 @@ function App() {
         {/* Optional: Catch-all route for broken links */}
         <Route path="*" element={<Dummy title="404" />} />
       </Routes>
+      <ChatAssistant />
     </BrowserRouter>
   );
 }

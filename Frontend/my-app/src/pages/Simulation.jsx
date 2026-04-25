@@ -20,28 +20,51 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
-/* ── Local sub-components (all logic unchanged) ── */
-const Badge = ({ level }) => {
-  const colors = {
-    Low:    "badge-green",
-    Medium: "badge-amber",
-    High:   "badge-red",
+/* ── Shared dark risk pill ───────────────────────── */
+function RiskPill({ level }) {
+  const map = {
+    Low:    { bg: "rgba(16,185,129,0.15)", color: "#34d399", border: "rgba(16,185,129,0.3)", glow: "rgba(16,185,129,0.25)" },
+    Medium: { bg: "rgba(245,158,11,0.15)", color: "#fbbf24", border: "rgba(245,158,11,0.3)", glow: "rgba(245,158,11,0.2)"  },
+    High:   { bg: "rgba(239,68,68,0.15)",  color: "#f87171", border: "rgba(239,68,68,0.3)",  glow: "rgba(239,68,68,0.2)"  },
   };
+  const c = map[level] ?? { bg: "rgba(255,255,255,0.06)", color: "#6b7280", border: "rgba(255,255,255,0.1)", glow: "transparent" };
   return (
-    <span className={`badge ${colors[level] ?? colors.Medium}`}>
-      {level}
+    <span style={{
+      display: "inline-flex", alignItems: "center", padding: "3px 10px",
+      borderRadius: "9999px", fontSize: "11px", fontWeight: 700,
+      background: c.bg, color: c.color, border: `1px solid ${c.border}`,
+      boxShadow: `0 0 8px ${c.glow}`,
+    }}>
+      {level ?? "Unknown"}
     </span>
   );
-};
+}
 
-const ResultCard = ({ title, value, extra }) => (
-  <div className="card p-4 space-y-1.5">
-    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</p>
-    <p className="text-2xl font-bold text-slate-800">{value}</p>
-    {extra && <div>{extra}</div>}
-  </div>
-);
+/* ── Metric card ─────────────────────────────────── */
+function ResultCard({ title, value, numColor, extra }) {
+  return (
+    <div style={{
+      background: "#0d1117", border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: "16px", padding: "24px",
+    }}>
+      <p style={{
+        fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em",
+        fontWeight: 600, color: "#4b5563", margin: "0 0 12px",
+      }}>
+        {title}
+      </p>
+      <p style={{
+        fontSize: "44px", fontWeight: 800, letterSpacing: "-0.03em",
+        color: numColor ?? "#f9fafb", margin: "0 0 8px", lineHeight: 1,
+      }}>
+        {value}
+      </p>
+      {extra && <div>{extra}</div>}
+    </div>
+  );
+}
 
+/* ── Logic (unchanged) ───────────────────────────── */
 function buildResult({ params, disruptions, prediction }) {
   const probability = prediction.delayProbability;
   const delay  = Math.min(Math.round(probability), 95);
@@ -82,6 +105,13 @@ function buildResult({ params, disruptions, prediction }) {
     modelVersion: prediction.modelVersion,
     features:     prediction.features,
   };
+}
+
+/* ── Semantic number colour ──────────────────────── */
+function riskColor(pct) {
+  if (pct < 40) return "#34d399";
+  if (pct < 70) return "#fbbf24";
+  return "#f87171";
 }
 
 export default function Simulation() {
@@ -143,6 +173,7 @@ export default function Simulation() {
     }
   };
 
+  /* ── Chart config (dark) ─────────────────────── */
   const chartData = result && {
     labels: result.factors.map((f) => f.label),
     datasets: [{
@@ -151,6 +182,7 @@ export default function Simulation() {
         f.val >= 70 ? "#ef4444" : f.val >= 40 ? "#f59e0b" : "#10b981"
       ),
       borderRadius: 6,
+      borderSkipped: false,
     }],
   };
 
@@ -162,147 +194,228 @@ export default function Simulation() {
       y: {
         beginAtZero: true,
         max: 100,
-        grid:  { color: "#f1f5f9" },
-        ticks: { color: "#94a3b8", font: { size: 11 } },
+        grid:  { color: "rgba(255,255,255,0.05)" },
+        ticks: { color: "#4b5563", font: { size: 12 } },
+        border: { color: "rgba(255,255,255,0.06)" },
       },
       x: {
         grid:  { display: false },
-        ticks: { color: "#64748b", font: { size: 11 } },
+        ticks: { color: "#4b5563", font: { size: 12 } },
+        border: { color: "rgba(255,255,255,0.06)" },
       },
     },
   };
 
+  /* ── Card shell ─────────────────────────────── */
+  const card = {
+    background: "#0d1117",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "16px",
+    padding: "24px",
+    marginBottom: "16px",
+  };
+
   return (
-    <div className="bg-slate-50 min-h-screen">
+    <div style={{ background: "#030712", minHeight: "100vh", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#f9fafb" }}>
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-6 page-enter">
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "40px 32px 60px" }}>
+
         {/* Page header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Risk Simulation</h1>
-          <p className="section-sub">Try different scenarios and run them through the trained model</p>
+        <div style={{ marginBottom: "32px" }}>
+          <h1 style={{ fontSize: "36px", fontWeight: 800, color: "#f9fafb", letterSpacing: "-0.02em", margin: "0 0 8px" }}>
+            Risk Simulation
+          </h1>
+          <p style={{ fontSize: "15px", color: "#4b5563", margin: 0 }}>
+            Try different scenarios and run them through the trained model
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
+        {/* Two-column layout */}
+        <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
 
-          {/* ── Left: Controls ──────────────────── */}
-          <SimulationPanel
-            onSimulate={runSimulation}
-            onScenarioChange={handleScenarioChange}
-            preview={preview}
-            previewLoading={previewLoading}
-            previewError={previewError}
-          />
+          {/* ── Left: Controls ──────────────────────── */}
+          <div style={{ width: "360px", flexShrink: 0 }}>
+            <SimulationPanel
+              onSimulate={runSimulation}
+              onScenarioChange={handleScenarioChange}
+              preview={preview}
+              previewLoading={previewLoading}
+              previewError={previewError}
+            />
+          </div>
 
-          {/* ── Right: Results ──────────────────── */}
-          <div className="space-y-5">
+          {/* ── Right: Results ──────────────────────── */}
+          <div style={{ flex: 1, minWidth: 0 }}>
 
             {/* Empty state */}
             {!result && !loading && !error && (
-              <div className="card flex flex-col items-center justify-center py-20 gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-slate-400">
+              <div style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: "16px" }}>
+                <div style={{
+                  width: "64px", height: "64px", borderRadius: "16px",
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" width="32" height="32">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                   </svg>
                 </div>
-                <div className="text-center">
-                  <p className="text-slate-600 font-medium">No Results Yet</p>
-                  <p className="text-sm text-slate-400 mt-1">Configure your scenario and click Run Simulation</p>
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ fontSize: "15px", fontWeight: 600, color: "#9ca3af", margin: "0 0 4px" }}>No Results Yet</p>
+                  <p style={{ fontSize: "14px", color: "#4b5563", margin: 0 }}>Configure your scenario and click Run Simulation</p>
                 </div>
               </div>
             )}
 
             {/* Loading state */}
             {loading && (
-              <div className="card flex flex-col items-center justify-center py-20 gap-3">
-                <div className="w-10 h-10 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-                <p className="text-slate-500 text-sm font-medium">Running simulation…</p>
+              <div style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: "12px" }}>
+                <div style={{
+                  width: "40px", height: "40px",
+                  border: "3px solid rgba(16,185,129,0.2)",
+                  borderTopColor: "#10b981",
+                  borderRadius: "50%", animation: "sspin 0.7s linear infinite",
+                }} />
+                <p style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500, margin: 0 }}>Running simulation…</p>
               </div>
             )}
 
             {/* Error state */}
             {error && !loading && (
-              <div className="card p-6">
-                <div className="flex items-center gap-3 text-red-700 bg-red-50 rounded-xl p-4">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 flex-shrink-0">
+              <div style={{ ...card }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+                  borderRadius: "12px", padding: "14px 16px",
+                }}>
+                  <svg viewBox="0 0 20 20" fill="#ef4444" width="20" height="20" style={{ flexShrink: 0 }}>
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
                   </svg>
-                  <p className="text-sm">{error}</p>
+                  <p style={{ fontSize: "14px", color: "#f87171", margin: 0 }}>{error}</p>
                 </div>
               </div>
             )}
 
-            {/* Result */}
+            {/* ── Results ─────────────────────────── */}
             {result && !loading && (
               <>
                 {/* Top metric cards */}
-                <div className="grid grid-cols-3 gap-4">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "16px" }}>
                   <ResultCard
                     title="Delay Risk"
                     value={`${result.delay}%`}
-                    extra={<Badge level={result.level} />}
+                    numColor={riskColor(result.delay)}
+                    extra={<RiskPill level={result.level} />}
                   />
                   <ResultCard
                     title="Damage Risk"
                     value={`${result.damage}%`}
-                    extra={<Badge level={result.level} />}
+                    numColor={riskColor(result.damage)}
+                    extra={<RiskPill level={result.level} />}
                   />
                   <ResultCard
                     title="Extra Cost"
                     value={`₹${result.cost}K`}
-                    extra={<span className="text-xs text-slate-400">Score: {result.score.toFixed(2)}</span>}
+                    numColor="#f9fafb"
+                    extra={
+                      <span style={{ fontSize: "12px", color: "#4b5563" }}>
+                        Score: {result.score.toFixed(2)}
+                      </span>
+                    }
                   />
                 </div>
 
-                {/* Chart */}
-                <div className="card p-5">
-                  <h3 className="text-sm font-semibold text-slate-600 mb-4">Risk Factor Breakdown</h3>
-                  <div className="h-52">
+                {/* Risk Factor Breakdown chart */}
+                <div style={card}>
+                  <h3 style={{ fontSize: "15px", fontWeight: 600, color: "#f9fafb", margin: "0 0 20px" }}>
+                    Risk Factor Breakdown
+                  </h3>
+                  <div style={{ height: "208px" }}>
                     <Bar data={chartData} options={chartOptions} />
                   </div>
                 </div>
 
                 {/* Model explanation */}
-                <div className="card p-5 bg-indigo-50/80 border-indigo-100">
-                  <h4 className="text-sm font-semibold text-indigo-900 mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-indigo-200 flex items-center justify-center text-indigo-700 text-xs">AI</span>
-                    Model Explanation
-                  </h4>
-                  <p className="text-sm text-indigo-800 leading-relaxed">{result.explanation}</p>
-                  <p className="text-xs text-indigo-500 mt-3 bg-indigo-100 rounded-lg px-3 py-1.5">
-                    {result.modelVersion} · {result.features.distanceKm} km · traffic {result.features.trafficDurationMin} min ·
-                    weather severity {result.features.weatherSeverity} · hour {result.features.timeOfDay} ·
-                    hist. delay {result.features.historicalDelayAvg}
+                <div style={{
+                  background: "rgba(16,185,129,0.05)",
+                  border: "1px solid rgba(16,185,129,0.2)",
+                  borderLeft: "3px solid #10b981",
+                  borderRadius: "16px", padding: "24px", marginBottom: "16px",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                    <span style={{
+                      fontSize: "10px", fontWeight: 700,
+                      background: "rgba(16,185,129,0.2)", color: "#10b981",
+                      borderRadius: "6px", padding: "2px 8px",
+                    }}>
+                      AI
+                    </span>
+                    <h4 style={{ fontSize: "15px", fontWeight: 600, color: "#f9fafb", margin: 0 }}>
+                      Model Explanation
+                    </h4>
+                  </div>
+                  <p style={{ fontSize: "14px", color: "#9ca3af", lineHeight: 1.7, margin: "0 0 16px" }}>
+                    {result.explanation}
                   </p>
+                  {/* Feature pills */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {[
+                      `v: ${result.modelVersion}`,
+                      `${result.features.distanceKm} km`,
+                      `traffic ${result.features.trafficDurationMin} min`,
+                      `severity ${result.features.weatherSeverity}`,
+                      `hour ${result.features.timeOfDay}`,
+                      `hist. delay ${result.features.historicalDelayAvg}`,
+                    ].map((pill) => (
+                      <span key={pill} style={{
+                        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "8px", padding: "6px 12px",
+                        fontSize: "12px", fontFamily: "monospace", color: "#9ca3af",
+                      }}>
+                        {pill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Suggestions */}
-                <div className="card p-5">
-                  <h4 className="text-sm font-semibold text-slate-600 mb-3">Suggestions</h4>
-                  <ul className="space-y-2">
+                <div style={card}>
+                  <h4 style={{ fontSize: "15px", fontWeight: 600, color: "#f9fafb", margin: "0 0 16px" }}>Suggestions</h4>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
                     {result.tips.map((tip, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
-                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">→</span>
-                        {tip}
+                      <li key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                        <span style={{
+                          width: "6px", height: "6px", borderRadius: "50%", flexShrink: 0,
+                          background: "#10b981", boxShadow: "0 0 6px #10b981", marginTop: "7px",
+                        }} />
+                        <span style={{ fontSize: "14px", color: "#9ca3af", lineHeight: 1.6 }}>{tip}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* History */}
+                {/* Recent Runs */}
                 {history.length > 0 && (
-                  <div className="card p-5">
-                    <h4 className="text-sm font-semibold text-slate-600 mb-3">Recent Runs</h4>
-                    <div className="space-y-2">
+                  <div style={card}>
+                    <h4 style={{ fontSize: "15px", fontWeight: 600, color: "#f9fafb", margin: "0 0 16px" }}>Recent Runs</h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {history.map((entry) => (
                         <div
                           key={entry.id}
-                          className="flex items-center justify-between text-xs bg-slate-50 rounded-lg px-3 py-2"
+                          style={{
+                            display: "flex", alignItems: "center", gap: "16px",
+                            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                            borderRadius: "12px", padding: "14px 18px",
+                          }}
                         >
-                          <span className="text-slate-400 font-mono">#{entry.id}</span>
-                          <span className="font-semibold text-slate-700 tabular-nums">{entry.score.toFixed(2)}/100</span>
-                          <Badge level={entry.level} />
-                          <span className="text-slate-400">{entry.time}</span>
+                          <span style={{ fontSize: "12px", fontFamily: "monospace", color: "#4b5563", flexShrink: 0 }}>
+                            #{entry.id}
+                          </span>
+                          <span style={{ fontSize: "15px", fontWeight: 700, color: "#f9fafb", fontFamily: "monospace" }}>
+                            {entry.score.toFixed(2)}/100
+                          </span>
+                          <RiskPill level={entry.level} />
+                          <span style={{ fontSize: "12px", color: "#4b5563", marginLeft: "auto" }}>{entry.time}</span>
                         </div>
                       ))}
                     </div>
@@ -313,6 +426,8 @@ export default function Simulation() {
           </div>
         </div>
       </div>
+
+      <style>{`@keyframes sspin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

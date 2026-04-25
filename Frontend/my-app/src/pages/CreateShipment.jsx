@@ -44,22 +44,101 @@ const initialForm = {
   timeWindow:   "morning",
 };
 
-function Badge({ priority }) {
-  const colors = {
-    low:    "badge-green",
-    medium: "badge-amber",
-    high:   "badge-red",
-  };
+/* ── Shared inline styles ─────────────────────────── */
+const inputBase = {
+  width: "100%",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: "12px",
+  padding: "14px 16px 14px 44px",
+  fontSize: "14px",
+  color: "#f9fafb",
+  fontFamily: "inherit",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+  appearance: "none",
+  WebkitAppearance: "none",
+};
+const inputNoIcon = { ...inputBase, padding: "14px 16px" };
+
+function DarkInput(props) {
   return (
-    <span className={`badge ${colors[priority]}`}>
-      {priority.charAt(0).toUpperCase() + priority.slice(1)}
+    <input
+      {...props}
+      style={{ ...inputBase, ...(props.noIcon ? { padding: "14px 16px" } : {}), ...props.style }}
+      onFocus={e => {
+        e.target.style.borderColor = "rgba(16,185,129,0.6)";
+        e.target.style.boxShadow = "0 0 0 3px rgba(16,185,129,0.1)";
+        e.target.style.background = "rgba(255,255,255,0.06)";
+      }}
+      onBlur={e => {
+        e.target.style.borderColor = "rgba(255,255,255,0.1)";
+        e.target.style.boxShadow = "none";
+        e.target.style.background = "rgba(255,255,255,0.04)";
+      }}
+      onMouseEnter={e => { if (document.activeElement !== e.target) e.target.style.borderColor = "rgba(255,255,255,0.2)"; }}
+      onMouseLeave={e => { if (document.activeElement !== e.target) e.target.style.borderColor = "rgba(255,255,255,0.1)"; }}
+    />
+  );
+}
+
+function DarkSelect({ children, ...props }) {
+  return (
+    <select
+      {...props}
+      style={{ ...inputBase, cursor: "pointer" }}
+      onFocus={e => {
+        e.target.style.borderColor = "rgba(16,185,129,0.6)";
+        e.target.style.boxShadow = "0 0 0 3px rgba(16,185,129,0.1)";
+        e.target.style.background = "rgba(255,255,255,0.06)";
+      }}
+      onBlur={e => {
+        e.target.style.borderColor = "rgba(255,255,255,0.1)";
+        e.target.style.boxShadow = "none";
+        e.target.style.background = "rgba(255,255,255,0.04)";
+      }}
+    >
+      {children}
+    </select>
+  );
+}
+
+function InputIcon({ children }) {
+  return (
+    <span style={{
+      position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)",
+      width: "18px", height: "18px", color: "#4b5563", display: "flex",
+      alignItems: "center", justifyContent: "center", fontSize: "16px", pointerEvents: "none",
+    }}>
+      {children}
     </span>
+  );
+}
+
+function SectionLabel({ children, dot }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+      {dot && (
+        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: dot, flexShrink: 0 }} />
+      )}
+      <p style={{
+        fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em",
+        textTransform: "uppercase", color: "#4b5563", margin: 0,
+      }}>
+        {children}
+      </p>
+    </div>
   );
 }
 
 function FieldError({ message }) {
   if (!message) return null;
-  return <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">⚠ {message}</p>;
+  return (
+    <p style={{ marginTop: "6px", fontSize: "12px", color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
+      ⚠ {message}
+    </p>
+  );
 }
 
 function useFormValidation() {
@@ -83,52 +162,66 @@ function useFormValidation() {
   return { errors, setError, clearError, validateStep1 };
 }
 
-/* ── Address section sub-component ──────── */
+/* ── Review badge ─────────────────────────────────── */
+function PriorityReviewBadge({ priority }) {
+  const map = {
+    low:    { bg: "rgba(16,185,129,0.15)",  color: "#34d399", border: "rgba(16,185,129,0.3)"  },
+    medium: { bg: "rgba(245,158,11,0.15)",  color: "#fbbf24", border: "rgba(245,158,11,0.3)"  },
+    high:   { bg: "rgba(239,68,68,0.15)",   color: "#f87171", border: "rgba(239,68,68,0.3)"   },
+  };
+  const c = map[priority] ?? map.low;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", padding: "2px 12px",
+      borderRadius: "9999px", fontSize: "12px", fontWeight: 600,
+      background: c.bg, color: c.color, border: `1px solid ${c.border}`,
+    }}>
+      {priority.charAt(0).toUpperCase() + priority.slice(1)}
+    </span>
+  );
+}
+
+/* ── Address section sub-component ──────────────────── */
 function AddressSection({ title, prefix, form, setNested, errors }) {
+  const isOrigin = prefix === "origin";
   return (
     <section>
-      <div className="flex items-center gap-2 mb-4">
-        <div className={`w-2 h-2 rounded-full ${prefix === "origin" ? "bg-slate-700" : "bg-emerald-500"}`} />
-        <p className="form-label mb-0">{title}</p>
-      </div>
-      <div className="space-y-3">
+      <SectionLabel dot={isOrigin ? "#10b981" : "#ef4444"}>{title}</SectionLabel>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <div>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📍</span>
-            <input
+          <div style={{ position: "relative" }}>
+            <InputIcon>📍</InputIcon>
+            <DarkInput
               type="text"
               placeholder="Street address"
               value={form[prefix].address}
               onChange={(e) => setNested(`${prefix}.address`, e.target.value)}
-              className="form-input pl-9"
             />
           </div>
           <FieldError message={errors[`${prefix}.address`]} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
           <div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🏙️</span>
-              <input
+            <div style={{ position: "relative" }}>
+              <InputIcon>🏙️</InputIcon>
+              <DarkInput
                 type="text"
                 placeholder="City"
                 value={form[prefix].city}
                 onChange={(e) => setNested(`${prefix}.city`, e.target.value)}
-                className="form-input pl-9"
               />
             </div>
             <FieldError message={errors[`${prefix}.city`]} />
           </div>
           <div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">#</span>
-              <input
+            <div style={{ position: "relative" }}>
+              <InputIcon>#</InputIcon>
+              <DarkInput
                 type="text"
                 placeholder="PIN code"
                 maxLength={6}
                 value={form[prefix].pin}
                 onChange={(e) => setNested(`${prefix}.pin`, e.target.value)}
-                className="form-input pl-9"
               />
             </div>
             <FieldError message={errors[`${prefix}.pin`]} />
@@ -139,6 +232,78 @@ function AddressSection({ title, prefix, form, setNested, errors }) {
   );
 }
 
+/* ── Route separator ornament ─────────────────────── */
+function RouteSeparator() {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      height: "40px", position: "relative", margin: "4px 0",
+    }}>
+      <div style={{ flex: 1, width: "2px", borderLeft: "2px dashed rgba(255,255,255,0.08)" }} />
+      <div style={{
+        width: "14px", height: "14px", transform: "rotate(45deg)",
+        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+        flexShrink: 0,
+      }} />
+      <div style={{ flex: 1, width: "2px", borderLeft: "2px dashed rgba(255,255,255,0.08)" }} />
+    </div>
+  );
+}
+
+/* ── Primary action button ─────────────────────────── */
+function PrimaryBtn({ onClick, disabled, children }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: "100%", background: "linear-gradient(135deg, #10b981, #059669)",
+        color: "white", fontSize: "15px", fontWeight: 600,
+        padding: "16px", borderRadius: "12px", border: "none",
+        cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
+        boxShadow: "0 0 30px rgba(16,185,129,0.3)",
+        transition: "all 0.2s ease",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+        opacity: disabled ? 0.7 : 1,
+      }}
+      onMouseEnter={e => {
+        if (!disabled) {
+          e.currentTarget.style.transform = "translateY(-1px)";
+          e.currentTarget.style.boxShadow = "0 0 40px rgba(16,185,129,0.5)";
+        }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 0 30px rgba(16,185,129,0.3)";
+      }}
+    >
+      {children}
+      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+      </svg>
+    </button>
+  );
+}
+
+function SecondaryBtn({ onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "12px", padding: "12px 24px", color: "#9ca3af",
+        fontSize: "14px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit",
+        transition: "all 0.15s",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#f9fafb"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#9ca3af"; }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ── Main component ────────────────────────────────── */
 export default function CreateShipment() {
   const navigate = useNavigate();
   const [step,       setStep]       = useState(0);
@@ -229,54 +394,95 @@ export default function CreateShipment() {
     return d.toISOString().split("T")[0];
   };
 
+  /* ── Card shell ─────────────────────────────────── */
+  const cardStyle = {
+    background: "#0d1117",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "20px",
+    padding: "40px",
+    boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+  };
+
+  const dividerStyle = {
+    border: "none",
+    borderTop: "1px solid rgba(255,255,255,0.06)",
+    margin: "24px 0",
+  };
+
+  /* ── Priority card styles ─────────────────────────── */
+  const priorityAccent = {
+    low:    { sel: { borderColor: "rgba(16,185,129,0.5)",  background: "rgba(16,185,129,0.08)",  boxShadow: "0 0 20px rgba(16,185,129,0.1)"   } },
+    medium: { sel: { borderColor: "rgba(245,158,11,0.5)",  background: "rgba(245,158,11,0.08)",  boxShadow: "0 0 20px rgba(245,158,11,0.1)"   } },
+    high:   { sel: { borderColor: "rgba(239,68,68,0.5)",   background: "rgba(239,68,68,0.08)",   boxShadow: "0 0 20px rgba(239,68,68,0.1)"    } },
+  };
+
   // ── render ────────────────────────────────────────────────────
   return (
-    <div className="bg-slate-50 min-h-screen">
+    <div style={{ background: "#030712", minHeight: "100vh", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
       <Navbar />
-      <Toaster position="top-right" toastOptions={{ style: { fontFamily: "Inter, sans-serif" } }} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: { fontFamily: "Inter, sans-serif", background: "#0d1117", color: "#f9fafb", border: "1px solid rgba(255,255,255,0.08)" },
+        }}
+      />
 
-      <div className="max-w-2xl mx-auto px-4 py-8 page-enter">
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "40px 24px 80px" }}>
 
         {/* Page header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">New Shipment</h1>
-          <p className="text-sm text-slate-400 mt-1">Fill in route, priority, and delivery constraints</p>
+        <div style={{ marginBottom: "40px" }}>
+          <h1 style={{ fontSize: "36px", fontWeight: 800, color: "#f9fafb", letterSpacing: "-0.02em", margin: "0 0 8px" }}>
+            New Shipment
+          </h1>
+          <p style={{ fontSize: "15px", color: "#4b5563", margin: 0 }}>
+            Fill in route, priority, and delivery constraints
+          </p>
         </div>
 
         {/* ── Stepper ─────────────────────────────── */}
-        <div className="flex items-start mb-8">
+        <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "40px" }}>
+          {/* Background connector */}
+          <div style={{
+            position: "absolute", top: "16px", left: "10%", right: "10%",
+            height: "1px", background: "rgba(255,255,255,0.08)", zIndex: 0,
+          }} />
+
           {STEPS.map((s, i) => {
-            const isDone    = doneSteps.has(i);
-            const isActive  = i === step;
-            const isLocked  = !isDone && i > step;
+            const isDone   = doneSteps.has(i);
+            const isActive = i === step;
+            const isLocked = !isDone && i > step;
             return (
-              <div key={i} className="flex items-start flex-1">
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    onClick={() => goToStep(i)}
-                    disabled={isLocked}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all duration-200
-                      ${isDone
-                        ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-200"
-                        : isActive
-                          ? "bg-white border-emerald-500 text-emerald-700 shadow-md"
-                          : "bg-white border-slate-200 text-slate-400 cursor-default"
-                      }`}
-                  >
-                    {isDone ? "✓" : i + 1}
-                  </button>
-                  <div className="text-center">
-                    <p className={`text-xs font-semibold ${isActive ? "text-slate-800" : isDone ? "text-emerald-600" : "text-slate-400"}`}>
-                      {s.label}
-                    </p>
-                    <p className="text-xs text-slate-400 hidden sm:block">{s.desc}</p>
-                  </div>
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", zIndex: 1, position: "relative" }}>
+                <button
+                  onClick={() => goToStep(i)}
+                  disabled={isLocked}
+                  style={{
+                    width: "32px", height: "32px", borderRadius: "50%", border: "none",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 700, fontSize: "14px", cursor: isLocked ? "default" : "pointer",
+                    transition: "all 0.2s",
+                    ...(isDone
+                      ? { background: "#10b981", color: "white" }
+                      : isActive
+                        ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "white", boxShadow: "0 0 20px rgba(16,185,129,0.5)" }
+                        : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#4b5563" }
+                    ),
+                  }}
+                >
+                  {isDone ? (
+                    <svg viewBox="0 0 14 14" fill="none" width="14" height="14">
+                      <path d="M2.5 7l3.5 3.5 5.5-7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    i + 1
+                  )}
+                </button>
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ fontSize: "12px", fontWeight: isActive ? 600 : 400, color: isActive ? "#10b981" : "#4b5563", margin: "0 0 2px" }}>
+                    {s.label}
+                  </p>
+                  <p style={{ fontSize: "10px", color: "#374151", margin: 0 }}>{s.desc}</p>
                 </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 mt-4 mx-3 rounded-full transition-all duration-300
-                    ${isDone ? "bg-emerald-400" : "bg-slate-200"}`}
-                  />
-                )}
               </div>
             );
           })}
@@ -284,41 +490,39 @@ export default function CreateShipment() {
 
         {/* ══ STEP 0 — Route ══ */}
         {step === 0 && (
-          <div className="card p-8 space-y-6 animate-[fadeSlideIn_0.2s_ease-out]">
-
-            <AddressSection title="Origin" prefix="origin"      form={form} setNested={setNested} errors={errors} />
-            <hr className="border-slate-100" />
+          <div style={cardStyle}>
+            <AddressSection title="Origin" prefix="origin" form={form} setNested={setNested} errors={errors} />
+            <RouteSeparator />
             <AddressSection title="Destination" prefix="destination" form={form} setNested={setNested} errors={errors} />
-            <hr className="border-slate-100" />
+
+            <hr style={dividerStyle} />
 
             {/* Cargo */}
             <section>
-              <p className="form-label">Cargo Details</p>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">⚖️</span>
-                  <input
+              <SectionLabel>Cargo Details</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                <div style={{ position: "relative" }}>
+                  <InputIcon>⚖️</InputIcon>
+                  <DarkInput
                     type="number"
                     placeholder="Weight (kg)"
                     min="0.1"
                     step="0.1"
                     value={form.weight}
                     onChange={(e) => setNested("weight", e.target.value)}
-                    className="form-input pl-9"
                   />
                 </div>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📦</span>
-                  <select
+                <div style={{ position: "relative" }}>
+                  <InputIcon>📦</InputIcon>
+                  <DarkSelect
                     value={form.packageType}
                     onChange={(e) => setNested("packageType", e.target.value)}
-                    className="form-input pl-9 appearance-none"
                   >
                     <option value="">Package type</option>
                     {PACKAGE_TYPES.map((t) => (
                       <option key={t} value={t.toLowerCase()}>{t}</option>
                     ))}
-                  </select>
+                  </DarkSelect>
                 </div>
               </div>
               <textarea
@@ -327,86 +531,120 @@ export default function CreateShipment() {
                 rows={3}
                 value={form.instructions}
                 onChange={(e) => setNested("instructions", e.target.value)}
-                className="form-input resize-none"
+                style={{
+                  ...inputNoIcon,
+                  resize: "none",
+                  minHeight: "100px",
+                  paddingTop: "14px",
+                }}
+                onFocus={e => {
+                  e.target.style.borderColor = "rgba(16,185,129,0.6)";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(16,185,129,0.1)";
+                  e.target.style.background = "rgba(255,255,255,0.06)";
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = "rgba(255,255,255,0.1)";
+                  e.target.style.boxShadow = "none";
+                  e.target.style.background = "rgba(255,255,255,0.04)";
+                }}
               />
-              <p className="text-xs text-slate-400 text-right mt-1">{form.instructions.length}/200</p>
+              <p style={{ fontSize: "12px", color: "#374151", textAlign: "right", marginTop: "8px" }}>
+                {form.instructions.length}/200
+              </p>
             </section>
 
-            <div className="flex justify-end pt-2">
-              <button onClick={handleNext} className="btn-primary px-7 gap-2 flex items-center">
-                Continue
-                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/></svg>
-              </button>
+            <div style={{ marginTop: "24px" }}>
+              <PrimaryBtn onClick={handleNext}>Continue</PrimaryBtn>
             </div>
           </div>
         )}
 
         {/* ══ STEP 1 — Priority & Constraints ══ */}
         {step === 1 && (
-          <div className="card p-8 space-y-6 animate-[fadeSlideIn_0.2s_ease-out]">
+          <div style={cardStyle}>
 
             {/* Priority cards */}
             <section>
-              <p className="form-label">Delivery Priority</p>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <SectionLabel>Delivery Priority</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "16px" }}>
                 {PRIORITY_OPTIONS.map((opt) => {
                   const isSelected = form.priority === opt.value;
-                  const accent = {
-                    low:    isSelected ? "border-emerald-400 bg-emerald-50 shadow-emerald-100" : "border-slate-200 hover:border-emerald-300",
-                    medium: isSelected ? "border-amber-400   bg-amber-50   shadow-amber-100"   : "border-slate-200 hover:border-amber-300",
-                    high:   isSelected ? "border-red-400     bg-red-50     shadow-red-100"     : "border-slate-200 hover:border-red-300",
-                  }[opt.value];
+                  const selStyle = isSelected ? priorityAccent[opt.value].sel : {};
                   return (
                     <button
                       key={opt.value}
                       onClick={() => setNested("priority", opt.value)}
-                      className={`border-2 rounded-xl p-4 text-center transition-all duration-150 shadow-sm ${accent}`}
+                      style={{
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: "12px", padding: "16px 20px",
+                        cursor: "pointer", transition: "all 0.15s",
+                        textAlign: "center", fontFamily: "inherit",
+                        ...selStyle,
+                      }}
                     >
-                      <div className="text-2xl mb-1.5">{opt.icon}</div>
-                      <div className="text-sm font-semibold text-slate-800">{opt.label}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">{opt.desc}</div>
+                      <div style={{ fontSize: "24px", marginBottom: "8px" }}>{opt.icon}</div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, color: "#f9fafb", marginBottom: "4px" }}>{opt.label}</div>
+                      <div style={{ fontSize: "12px", color: "#6b7280" }}>{opt.desc}</div>
                     </button>
                   );
                 })}
               </div>
 
               {/* Estimates */}
-              <div className="grid grid-cols-3 gap-3">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
                 {[
                   { label: "Est. delivery", value: selectedPriority.desc                                          },
                   { label: "Est. cost",     value: `₹ ${selectedPriority.cost.toLocaleString("en-IN")}`           },
                   { label: "Distance",      value: "1,388 km"                                                     },
                 ].map(({ label, value }) => (
-                  <div key={label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                    <p className="text-xs text-slate-400 mb-1">{label}</p>
-                    <p className="text-sm font-bold text-slate-800">{value}</p>
+                  <div key={label} style={{
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: "12px", padding: "14px 16px",
+                  }}>
+                    <p style={{ fontSize: "11px", color: "#4b5563", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{label}</p>
+                    <p style={{ fontSize: "15px", fontWeight: 700, color: "#f9fafb", margin: 0 }}>{value}</p>
                   </div>
                 ))}
               </div>
             </section>
 
-            <hr className="border-slate-100" />
+            <hr style={dividerStyle} />
 
             {/* Constraints */}
             <section>
-              <p className="form-label">Route Constraints</p>
-              <div className="grid grid-cols-2 gap-3">
+              <SectionLabel>Route Constraints</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 {CONSTRAINT_OPTIONS.map((opt) => {
                   const checked = form.constraints.includes(opt.value);
                   return (
                     <button
                       key={opt.value}
                       onClick={() => toggleConstraint(opt.value)}
-                      className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all duration-150
-                        ${checked ? "border-emerald-300 bg-emerald-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"}`}
+                      style={{
+                        display: "flex", alignItems: "flex-start", gap: "12px",
+                        padding: "14px 16px", borderRadius: "12px", textAlign: "left",
+                        cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                        background: checked ? "rgba(16,185,129,0.06)" : "rgba(255,255,255,0.03)",
+                        border: checked ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                      }}
                     >
-                      <span className={`w-4 h-4 rounded-md flex items-center justify-center border flex-shrink-0 text-xs mt-0.5 transition-all
-                        ${checked ? "bg-emerald-600 border-emerald-600 text-white" : "border-slate-300"}`}>
-                        {checked && "✓"}
+                      <span style={{
+                        width: "18px", height: "18px", borderRadius: "5px", flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        marginTop: "1px", transition: "all 0.15s",
+                        background: checked ? "#10b981" : "rgba(255,255,255,0.04)",
+                        border: checked ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
+                      }}>
+                        {checked && (
+                          <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
+                            <path d="M2.5 7l3.5 3.5 5.5-7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
                       </span>
                       <span>
-                        <span className="block text-sm font-medium text-slate-800">{opt.label}</span>
-                        <span className="block text-xs text-slate-500 mt-0.5">{opt.sub}</span>
+                        <span style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#d1d5db", marginBottom: "2px" }}>{opt.label}</span>
+                        <span style={{ display: "block", fontSize: "12px", color: "#4b5563" }}>{opt.sub}</span>
                       </span>
                     </button>
                   );
@@ -414,71 +652,73 @@ export default function CreateShipment() {
               </div>
             </section>
 
-            <hr className="border-slate-100" />
+            <hr style={dividerStyle} />
 
             {/* Pickup schedule */}
             <section>
-              <p className="form-label">Pickup Schedule</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📅</span>
-                  <input
+              <SectionLabel>Pickup Schedule</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div style={{ position: "relative" }}>
+                  <InputIcon>📅</InputIcon>
+                  <DarkInput
                     type="date"
                     min={tomorrowISO()}
                     value={form.pickupDate}
                     onChange={(e) => setNested("pickupDate", e.target.value)}
-                    className="form-input pl-9"
                   />
                 </div>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🕐</span>
-                  <select
+                <div style={{ position: "relative" }}>
+                  <InputIcon>🕐</InputIcon>
+                  <DarkSelect
                     value={form.timeWindow}
                     onChange={(e) => setNested("timeWindow", e.target.value)}
-                    className="form-input pl-9 appearance-none"
                   >
                     {TIME_WINDOWS.map((w) => (
                       <option key={w.value} value={w.value}>{w.label}</option>
                     ))}
-                  </select>
+                  </DarkSelect>
                 </div>
               </div>
             </section>
 
-            <div className="flex justify-between pt-2">
-              <button onClick={handleBack} className="btn-secondary">← Back</button>
-              <button onClick={handleNext} className="btn-primary flex items-center gap-2">
-                Review
-                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/></svg>
-              </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "32px", gap: "12px" }}>
+              <SecondaryBtn onClick={handleBack}>← Back</SecondaryBtn>
+              <div style={{ flex: 1 }}>
+                <PrimaryBtn onClick={handleNext}>Review</PrimaryBtn>
+              </div>
             </div>
           </div>
         )}
 
         {/* ══ STEP 2 — Review & Confirm ══ */}
         {step === 2 && (
-          <div className="card p-8 space-y-6 animate-[fadeSlideIn_0.2s_ease-out]">
+          <div style={cardStyle}>
 
             {/* Route preview */}
-            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Route Preview</p>
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex flex-col gap-1 items-center">
-                  <span className="w-3 h-3 rounded-full bg-slate-700 border-2 border-white shadow" />
-                  <span className="w-0.5 h-6 bg-dashed-slate-300 border-l-2 border-dashed border-slate-200" />
-                  <span className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow" />
+            <div style={{
+              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: "14px", padding: "20px", marginBottom: "24px",
+            }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5563", margin: "0 0 16px" }}>
+                Route Preview
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                  <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#10b981", border: "2px solid rgba(255,255,255,0.15)", display: "block" }} />
+                  <span style={{ width: "2px", height: "24px", borderLeft: "2px dashed rgba(255,255,255,0.1)", display: "block" }} />
+                  <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444", border: "2px solid rgba(255,255,255,0.15)", display: "block" }} />
                 </div>
-                <div className="flex flex-col gap-4 flex-1">
-                  <span className="font-medium text-slate-700">{form.origin.address || "—"}, {form.origin.city}</span>
-                  <span className="font-medium text-slate-700">{form.destination.address || "—"}, {form.destination.city}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
+                  <span style={{ fontSize: "14px", fontWeight: 500, color: "#f9fafb" }}>{form.origin.address || "—"}, {form.origin.city}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 500, color: "#f9fafb" }}>{form.destination.address || "—"}, {form.destination.city}</span>
                 </div>
               </div>
             </div>
 
-            {/* Summary */}
-            <div className="divide-y divide-slate-50">
+            {/* Summary rows */}
+            <div>
               {[
-                { label: "Priority",     value: <Badge priority={form.priority} />                                    },
+                { label: "Priority",     value: <PriorityReviewBadge priority={form.priority} />                      },
                 { label: "Delivery",     value: selectedPriority.desc                                                  },
                 { label: "Est. cost",    value: `₹ ${selectedPriority.cost.toLocaleString("en-IN")}`                  },
                 { label: "Package",      value: form.packageType || "—"                                               },
@@ -490,38 +730,79 @@ export default function CreateShipment() {
                     ? form.constraints.map((c) => c.replace(/_/g, " ")).join(", ")
                     : "None",
                 },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center py-3">
-                  <span className="text-sm text-slate-500">{label}</span>
-                  <span className="text-sm font-semibold text-slate-800 text-right">{value}</span>
+              ].map(({ label, value }, idx, arr) => (
+                <div key={label} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "16px 0",
+                  borderBottom: idx < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                }}>
+                  <span style={{ fontSize: "14px", color: "#4b5563" }}>{label}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 500, color: "#f9fafb", textAlign: "right" }}>{value}</span>
                 </div>
               ))}
             </div>
 
             {form.instructions && (
-              <div className="bg-slate-50 rounded-xl p-4 text-sm border border-slate-100">
-                <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Instructions</span>
-                <span className="text-slate-600">{form.instructions}</span>
+              <div style={{
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: "12px", padding: "16px", marginTop: "16px",
+              }}>
+                <span style={{ display: "block", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#4b5563", marginBottom: "6px" }}>
+                  Instructions
+                </span>
+                <span style={{ fontSize: "14px", color: "#9ca3af" }}>{form.instructions}</span>
               </div>
             )}
 
-            <div className="flex justify-between pt-2">
-              <button onClick={handleBack} className="btn-secondary">← Edit</button>
-              <button
-                onClick={onSubmit}
-                disabled={submitting}
-                className="btn-primary flex items-center gap-2 px-7"
-              >
-                {submitting ? (
-                  <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating…</>
-                ) : (
-                  <><span>✓</span> Confirm Shipment</>
-                )}
-              </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "32px", gap: "12px" }}>
+              <SecondaryBtn onClick={handleBack}>← Edit</SecondaryBtn>
+              <div style={{ flex: 1 }}>
+                <button
+                  onClick={onSubmit}
+                  disabled={submitting}
+                  style={{
+                    width: "100%", background: "linear-gradient(135deg, #10b981, #059669)",
+                    color: "white", fontSize: "15px", fontWeight: 600,
+                    padding: "16px", borderRadius: "12px", border: "none",
+                    cursor: submitting ? "not-allowed" : "pointer", fontFamily: "inherit",
+                    boxShadow: "0 0 30px rgba(16,185,129,0.3)",
+                    transition: "all 0.2s ease", opacity: submitting ? 0.8 : 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  }}
+                  onMouseEnter={e => { if (!submitting) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 0 40px rgba(16,185,129,0.5)"; } }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 0 30px rgba(16,185,129,0.3)"; }}
+                >
+                  {submitting ? (
+                    <>
+                      <span style={{
+                        width: "16px", height: "16px",
+                        border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white",
+                        borderRadius: "50%", display: "inline-block",
+                        animation: "cspin 0.7s linear infinite",
+                      }} />
+                      Creating…
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 14 14" fill="none" width="16" height="16">
+                        <path d="M2.5 7l3.5 3.5 5.5-7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Confirm Shipment
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Spinner keyframe */}
+      <style>{`
+        @keyframes cspin { to { transform: rotate(360deg); } }
+        select option { background: #0d1117; color: #f9fafb; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+      `}</style>
     </div>
   );
 }

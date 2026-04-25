@@ -1,18 +1,36 @@
 /**
- * RiskBadge — colour-coded risk level pill.
+ * RiskBadge — Dark-themed colour-coded risk level pill.
  * Props preserved: level
  */
 const CONFIG = {
-  Low:    { dot: "bg-emerald-500", classes: "bg-emerald-50  text-emerald-700  border-emerald-200"  },
-  Medium: { dot: "bg-amber-500",   classes: "bg-amber-50    text-amber-700    border-amber-200"    },
-  High:   { dot: "bg-red-500",     classes: "bg-red-50      text-red-700      border-red-200"      },
+  Low:    {
+    bg: "rgba(16,185,129,0.15)",  color: "#34d399",
+    border: "rgba(16,185,129,0.2)", glow: "rgba(16,185,129,0.2)",
+  },
+  Medium: {
+    bg: "rgba(245,158,11,0.15)",   color: "#fbbf24",
+    border: "rgba(245,158,11,0.2)", glow: "rgba(245,158,11,0.2)",
+  },
+  High:   {
+    bg: "rgba(239,68,68,0.15)",    color: "#f87171",
+    border: "rgba(239,68,68,0.2)", glow: "rgba(239,68,68,0.2)",
+  },
+  Unknown: {
+    bg: "rgba(255,255,255,0.05)",  color: "#6b7280",
+    border: "rgba(255,255,255,0.1)", glow: "transparent",
+  },
 };
 
 export default function RiskBadge({ level }) {
-  const cfg = CONFIG[level] ?? CONFIG.Low;
+  const cfg = CONFIG[level] ?? CONFIG.Unknown;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.classes}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      padding: "3px 12px", borderRadius: "9999px", fontSize: "12px",
+      fontWeight: 600, background: cfg.bg, color: cfg.color,
+      border: `1px solid ${cfg.border}`,
+      boxShadow: `0 0 8px ${cfg.glow}`,
+    }}>
       {level ?? "Unknown"}
     </span>
   );

@@ -52,39 +52,51 @@ const ChatAssistant = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end">
+    <div style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
       {/* --- Floating Chat Panel --- */}
       {isOpen && (
-        <div className="mb-4 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
-          
+        <div style={{
+          marginBottom: "16px", width: "360px",
+          background: "#0a0f1a", borderRadius: "16px",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          overflow: "hidden", display: "flex", flexDirection: "column",
+        }}>
           {/* Header */}
-          <div className="p-4 bg-indigo-600 text-white flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-              <h3 className="font-semibold text-sm">Shipment AI Assistant</h3>
+          <div style={{
+            padding: "16px", background: "rgba(124,58,237,0.9)",
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            borderBottom: "1px solid rgba(139,92,246,0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ width: "8px", height: "8px", background: "#34d399", borderRadius: "50%", display: "inline-block" }} />
+              <h3 style={{ fontWeight: 600, fontSize: "14px", color: "#f9fafb", margin: 0 }}>Shipment AI Assistant</h3>
             </div>
             <button 
               onClick={() => setIsOpen(false)}
-              className="hover:bg-indigo-500 rounded p-1 transition-colors"
+              style={{
+                background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "6px",
+                padding: "4px 8px", color: "#f9fafb", cursor: "pointer", fontSize: "14px",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
             >
               ✕
             </button>
           </div>
 
           {/* Scrollable Message History */}
-          <div className="h-96 overflow-y-auto p-4 space-y-4 bg-slate-50">
+          <div style={{ height: "384px", overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", background: "#080d16" }}>
             {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] p-3 rounded-2xl text-sm ${
-                    msg.role === "user"
-                      ? "bg-indigo-600 text-white rounded-tr-none"
-                      : "bg-white text-slate-700 border border-slate-200 rounded-tl-none shadow-sm"
-                  }`}
-                >
+              <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                <div style={{
+                  maxWidth: "80%", padding: "10px 14px", borderRadius: "14px", fontSize: "14px",
+                  ...(msg.role === "user"
+                    ? { background: "rgba(124,58,237,0.85)", color: "#f9fafb", borderTopRightRadius: "4px" }
+                    : { background: "rgba(255,255,255,0.06)", color: "#d1d5db", border: "1px solid rgba(255,255,255,0.08)", borderTopLeftRadius: "4px" }
+                  ),
+                }}>
                   {msg.text}
                 </div>
               </div>
@@ -92,11 +104,18 @@ const ChatAssistant = () => {
             
             {/* Loading Indicator */}
             {loading && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
-                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{
+                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
+                  padding: "12px 16px", borderRadius: "14px", borderTopLeftRadius: "4px",
+                  display: "flex", gap: "4px",
+                }}>
+                  {[0, 0.2, 0.4].map((d, i) => (
+                    <span key={i} style={{
+                      width: "6px", height: "6px", background: "#6b7280", borderRadius: "50%",
+                      display: "inline-block", animation: `chatBounce 1.4s ease-in-out ${d}s infinite`,
+                    }} />
+                  ))}
                 </div>
               </div>
             )}
@@ -104,7 +123,11 @@ const ChatAssistant = () => {
           </div>
 
           {/* Input Field */}
-          <div className="p-3 bg-white border-t border-slate-100 flex gap-2">
+          <div style={{
+            padding: "12px", background: "#0a0f1a",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            display: "flex", gap: "8px",
+          }}>
             <input
               type="text"
               value={query}
@@ -112,12 +135,24 @@ const ChatAssistant = () => {
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask about shipment risks..."
               disabled={loading} // UX: Disable while processing
-              className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-50"
+              style={{
+                flex: 1, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px",
+                padding: "8px 14px", fontSize: "14px", color: "#f9fafb",
+                outline: "none", fontFamily: "inherit",
+                opacity: loading ? 0.5 : 1,
+              }}
             />
             <button
               onClick={handleSend}
               disabled={loading || !query.trim()}
-              className="bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 disabled:bg-slate-300 transition-colors shadow-md"
+              style={{
+                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                border: "none", borderRadius: "10px", padding: "8px 14px",
+                color: "white", cursor: loading || !query.trim() ? "not-allowed" : "pointer",
+                opacity: loading || !query.trim() ? 0.5 : 1,
+                fontSize: "16px", transition: "opacity 0.15s",
+              }}
             >
               🚀
             </button>
@@ -128,12 +163,36 @@ const ChatAssistant = () => {
       {/* --- Floating Toggle Button --- */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-xl transition-all duration-300 ${
-          isOpen ? "bg-slate-800 rotate-90" : "bg-indigo-600 hover:scale-110"
-        } text-white`}
+        style={{
+          width: "52px", height: "52px", borderRadius: "50%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "22px", border: "1px solid rgba(139,92,246,0.4)",
+          background: isOpen
+            ? "rgba(30,20,60,0.95)"
+            : "linear-gradient(135deg, #7c3aed, #6d28d9)",
+          color: "white", cursor: "pointer",
+          boxShadow: "0 0 20px rgba(124,58,237,0.4)",
+          transition: "all 0.25s ease",
+          transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.boxShadow = "0 0 30px rgba(124,58,237,0.6)";
+          e.currentTarget.style.transform = isOpen ? "rotate(90deg) scale(1.05)" : "scale(1.05)";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.boxShadow = "0 0 20px rgba(124,58,237,0.4)";
+          e.currentTarget.style.transform = isOpen ? "rotate(90deg)" : "rotate(0deg)";
+        }}
       >
         {isOpen ? "✕" : "💬"}
       </button>
+
+      <style>{`
+        @keyframes chatBounce {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+          40%            { transform: scale(1);   opacity: 1;   }
+        }
+      `}</style>
     </div>
   );
 };

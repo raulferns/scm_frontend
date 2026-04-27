@@ -1,38 +1,29 @@
-const db = require("../config/firebase");
-const { generateAIResponse } = require("../services/aiServices");
+const { askGemini } = require("../services/geminiService");
+const { getFallbackResponse } = require("../data/aiFallback");
 
-exports.queryAI = async (req, res) => {
+exports.askAI = async (req, res) => {
   try {
-    const { query } = req.body;
+    const { question } = req.body;
 
-    if (!query) {
-      return res.status(400).json({ error: "Query is required" });
+    if (!question) {
+      return res.status(400).json({ error: "Question required" });
     }
-
-    const snapshot = await db.collection("shipments").get();
-
-    const shipments = snapshot.docs.map(doc => ({
-      shipmentId: doc.id,
-      ...doc.data()
-    }));
 
     let answer;
 
     try {
-      answer = await generateAIResponse(query, shipments);
-    } catch (err) {
-      console.error("AI failed:", err.message);
-
       
-      const highRisk = shipments.filter(s => s.riskLevel === "High").length;
-
-      answer = `AI service unavailable. ${highRisk} shipments are currently high risk.`;
+      answer = await askGemini(question);
+    } catch (err) {
+      console.error("Gemini failed, using fallback");
+      answer = getFallbackResponse(question);
     }
 
-    res.status(200).json({ answer });
+    res.json({ answer });
 
   } catch (err) {
-    console.error("Controller error:", err);
-    res.status(500).json({ error: err.message });
+    // 🔥 Guaranteed fallback
+    const fallback = getFallbackResponse(req.body.question || "");
+    res.json({ answer: fallback });
   }
 };

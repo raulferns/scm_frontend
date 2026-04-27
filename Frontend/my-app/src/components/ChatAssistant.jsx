@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { SUGGESTED_QUESTIONS } from "../constants/chatSuggestions";
 
 /**
  * FEATURE: Conversational Assistant UI
@@ -24,32 +25,36 @@ const ChatAssistant = () => {
     }
   }, [messages, isOpen]);
 
-  const handleSend = async () => {
-    if (!query.trim() || loading) return;
+  const handleSend = async (customQuery) => {
+  const finalQuery = customQuery || query;
 
-    const userMessage = { role: "user", text: query };
-    setMessages((prev) => [...prev, userMessage]);
-    setQuery("");
-    setLoading(true);
+  if (!finalQuery.trim() || loading) return;
 
-    try {
-      // ✅ API INTEGRATION: Endpoint POST /api/v1/ai/query
-      const response = await axios.post("/api/v1/ai/query", { query });
-      
-      const aiResponse = { 
-        role: "ai", 
-        text: response.data.answer || "I couldn't find an answer for that." 
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "Sorry, I'm having trouble connecting to the server." },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const userMessage = { role: "user", text: finalQuery };
+  setMessages((prev) => [...prev, userMessage]);
+  setQuery("");
+  setLoading(true);
+
+  try {
+    const response = await axios.post("/api/v1/ai/chat", {
+      question: finalQuery,
+    });
+
+    const aiResponse = {
+      role: "ai",
+      text: response.data.answer || "No response available.",
+    };
+
+    setMessages((prev) => [...prev, aiResponse]);
+  } catch (error) {
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: "Using fallback response..." },
+    ]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
@@ -87,6 +92,40 @@ const ChatAssistant = () => {
           </div>
 
           {/* Scrollable Message History */}
+          {/* Suggested Questions */}
+<div style={{
+  padding: "12px",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "8px",
+  borderTop: "1px solid rgba(255,255,255,0.06)",
+  background: "#0a0f1a"
+}}>
+  {SUGGESTED_QUESTIONS.map((q, i) => (
+    <button
+      key={i}
+      onClick={() => handleSend(q)}
+      style={{
+        background: "rgba(124,58,237,0.15)",
+        color: "#c4b5fd",
+        border: "1px solid rgba(139,92,246,0.3)",
+        borderRadius: "999px",
+        padding: "6px 12px",
+        fontSize: "12px",
+        cursor: "pointer",
+        transition: "all 0.2s",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "rgba(124,58,237,0.3)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "rgba(124,58,237,0.15)";
+      }}
+    >
+      {q}
+    </button>
+  ))}
+</div>
           <div style={{ height: "384px", overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", background: "#080d16" }}>
             {messages.map((msg, i) => (
               <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>

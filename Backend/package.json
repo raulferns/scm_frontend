@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "concurrently --kill-others-on-fail --names api,ml --prefix-colors blue,green \"npm:dev:api\" \"npm:dev:ml\"",
     "dev:api": "nodemon server.js",
-    "dev:ml": "python ml_service/app.py"
+    "dev:ml": "python ml_service/app.py",
+    "start": "node src/index.js"
   },
   "keywords": [],
   "author": "",

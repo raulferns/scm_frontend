@@ -70,7 +70,7 @@ def main():
 
     rmse = mean_squared_error(y_test, predictions) ** 0.5
     metadata = {
-        "model_version": "xgboost-regressor-v1",
+        "model_version": "xgboost-regressor-v2",
         "trained_at": datetime.now(timezone.utc).isoformat(),
         "feature_columns": FEATURE_COLUMNS,
         "metrics": {

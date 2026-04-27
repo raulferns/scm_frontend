@@ -38,7 +38,7 @@ function buildEta(trafficDurationMin, delayProbability, startTime) {
 exports.predictRisk = async(req, res) => {
     let mlFeatures = {};
     try{
-        const mlFeatures  = {
+        mlFeatures = {
             distanceKm: Number(req.body.distanceKm) || 0,
             trafficDurationMin: Number(req.body.trafficDurationMin) || 0,
             weatherSeverity: Number(req.body.weatherSeverity) || 0,

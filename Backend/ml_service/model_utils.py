@@ -123,4 +123,14 @@ def load_artifacts(model_path, metadata_path):
     with metadata_path.open("r", encoding="utf-8") as metadata_file:
         metadata = json.load(metadata_file)
 
+    trained_columns = metadata.get("feature_columns") or []
+    if list(trained_columns) != FEATURE_COLUMNS:
+        return None, {
+            **metadata,
+            "artifact_error": (
+                "Saved model feature schema does not match the current service. "
+                "Retrain the model with train_model.py."
+            ),
+        }
+
     return model, metadata

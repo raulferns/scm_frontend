@@ -39,6 +39,7 @@ def health():
             "service": "shipment-ml",
             "modelLoaded": model is not None,
             "modelVersion": metadata.get("model_version") if metadata else None,
+            "artifactError": metadata.get("artifact_error") if metadata else None,
         }
     )
 

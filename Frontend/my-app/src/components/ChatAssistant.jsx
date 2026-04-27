@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { SUGGESTED_QUESTIONS } from "../constants/chatSuggestions";
+import { BASE_URL } from "../api/base";
 
 /**
  * FEATURE: Conversational Assistant UI
@@ -36,7 +37,7 @@ const ChatAssistant = () => {
   setLoading(true);
 
   try {
-    const response = await axios.post("/api/v1/ai/chat", {
+    const response = await axios.post(`${BASE_URL}/api/v1/ai/chat`, {
       question: finalQuery,
     });
 

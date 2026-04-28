@@ -61,7 +61,9 @@ exports.predictRisk = async(req, res) => {
     }catch(err){
         console.error("ML failed:", err.message);
 
-        res.status(500).json({
+        res.status(503).json({
+      error: err.message || "ML service unavailable",
+      retryable: true,
       delayProbability: 0,
       riskLevel: "Low",
       explanation: "ML service unavailable",

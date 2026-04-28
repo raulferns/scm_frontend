@@ -1,14 +1,22 @@
 import { BASE_URL } from "./base";
 
-export async function predictShipmentRisk(payload) {
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function requestPrediction(payload) {
+  return fetch(`${BASE_URL}/api/v1/predict`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function predictShipmentRisk(payload, attempt = 1) {
   let res;
 
   try {
-    res = await fetch(`${BASE_URL}/api/v1/predict`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    res = await requestPrediction(payload);
   } catch (error) {
     throw new Error(
       "Could not reach backend prediction API. Ensure backend is running."
@@ -25,6 +33,11 @@ export async function predictShipmentRisk(payload) {
   }
 
   if (!res.ok) {
+    if ((res.status === 503 || data.retryable) && attempt < 2) {
+      await wait(6000);
+      return predictShipmentRisk(payload, attempt + 1);
+    }
+
     throw new Error(
       data.error ||
         text ||
